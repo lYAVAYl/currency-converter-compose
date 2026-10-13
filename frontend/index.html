@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <meta name="description" content="Конвертер нескольких валют с мгновенным пересчётом и историей.">
+  <title>Пара — конвертер валют</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="wordmark" href="#top" aria-label="Пара, наверх">ПАРА<span aria-hidden="true">✳</span></a>
+      <span class="header-caption">КОНВЕРТЕР ВАЛЮТ</span>
+    </header>
+
+    <main id="top">
+      <div class="intro">
+        <p class="eyebrow">ПРОСТО О КУРСЕ <span aria-hidden="true">↗</span></p>
+        <h1>Одна сумма.<br><span>Много валют.</span></h1>
+        <p>Введите сумму в любой строке — остальные пересчитаются сразу. Выберите нужные валюты из списка.</p>
+      </div>
+
+      <section class="converter" aria-labelledby="converter-title">
+        <div class="section-head">
+          <div>
+            <p class="section-index">01 / КОНВЕРТЕР</p>
+            <h2 id="converter-title">Ваши валюты</h2>
+          </div>
+          <span class="rate-status" id="rate-status" role="status">Загружаем курсы…</span>
+        </div>
+
+        <div class="currency-rows" id="currency-rows" aria-live="off"></div>
+
+        <div class="currency-picker" id="currency-picker">
+          <label class="visually-hidden" for="currency-search">Найти и добавить валюту по коду или названию</label>
+          <input id="currency-search" type="search" placeholder="+ Найти валюту по коду или названию" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="currency-options" aria-expanded="false" disabled>
+          <div class="currency-options" id="currency-options" role="listbox" aria-label="Валюты для добавления" hidden></div>
+        </div>
+
+        <p class="converter-error" id="converter-error" role="alert" hidden></p>
+        <div class="converter-footer">
+          <button id="save-button" class="primary-button" type="button" disabled>Сохранить расчёт <span aria-hidden="true">↗</span></button>
+          <button id="retry-button" class="text-button" type="button" hidden>Повторить загрузку курсов</button>
+          <span class="save-status" id="save-status" role="status"></span>
+        </div>
+      </section>
+
+      <section class="history" id="history" aria-labelledby="history-title">
+        <div class="section-head history-head">
+          <div>
+            <p class="section-index">02 / БАЗА ДАННЫХ</p>
+            <h2 id="history-title">История<span class="accent-dot">.</span></h2>
+          </div>
+          <button id="history-button" class="outline-button" type="button">Показать историю <span aria-hidden="true">↗</span></button>
+        </div>
+        <div id="history-content" class="history-content" aria-live="polite">
+          <p class="history-placeholder">Нажмите «Показать историю», чтобы увидеть сохранённые расчёты.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>ПАРА ✳</span>
+      <p>Справочные курсы от <a href="https://frankfurter.dev/" target="_blank" rel="noopener noreferrer">Frankfurter</a>. Реальный обмен денег не выполняется.</p>
+    </footer>
+  </div>
+</body>
+</html>
