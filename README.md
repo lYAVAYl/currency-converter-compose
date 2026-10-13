@@ -21,7 +21,8 @@
 docker compose up --build -d
 ```
 
-Откройте [http://localhost:8080](http://localhost:8080). Для остановки:
+Откройте [http://localhost:8080](http://localhost:8080).
+Для остановки:
 
 ```powershell
 docker compose down
