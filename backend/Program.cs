@@ -2,6 +2,7 @@ using Backend.Data;
 using Backend.Endpoints;
 using Backend.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +26,14 @@ builder.Services.AddHttpClient<RateServiceClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(25);
 });
 builder.Services.AddScoped<MarketCatalogService>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Currency Converter API", Version = "v1" }));
 
 var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // This small single-instance lab app applies its checked-in migrations on startup.
 using (var scope = app.Services.CreateScope())
@@ -35,11 +42,15 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
+    .WithSummary("Проверить работу бекенда")
+    .WithDescription("Возвращает статус процесса, если бекенд принимает HTTP-запросы.");
 app.MapGet("/health/ready", async (AppDbContext db, CancellationToken cancellationToken) =>
     await db.Database.CanConnectAsync(cancellationToken)
         ? Results.Ok(new { status = "ready" })
-        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable))
+    .WithSummary("Проверить готовность бекенда")
+    .WithDescription("Проверяет подключение к PostgreSQL. Возвращает HTTP 503, если база недоступна.");
 
 app.MapConversionEndpoints();
 

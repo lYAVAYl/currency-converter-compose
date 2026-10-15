@@ -4,6 +4,9 @@
 курсы из [Frankfurter v2](https://frankfurter.dev/). Ключ API не требуется.
 Сервис исключает металлы и расчётные единицы, оставляя денежные валюты.
 
+Swagger UI: [http://localhost:8082/swagger](http://localhost:8082/swagger).
+OpenAPI JSON: [http://localhost:8082/swagger/v1/swagger.json](http://localhost:8082/swagger/v1/swagger.json).
+
 | Метод | Адрес | Назначение |
 | --- | --- | --- |
 | GET | `/api/market` | Список валют и курсов относительно USD |

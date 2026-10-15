@@ -1,4 +1,5 @@
 using WebService.Services;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 var frankfurterUri = ProviderUri(builder.Configuration["Providers:FrankfurterBaseUrl"], "Frankfurter");
@@ -10,10 +11,18 @@ builder.Services.AddHttpClient<FrankfurterClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 builder.Services.AddTransient<RateCalculator>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Exchange Rates API", Version = "v1" }));
 
 var app = builder.Build();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
+    .WithSummary("Проверить работу сервиса курсов")
+    .WithDescription("Возвращает статус процесса без обращения к внешнему поставщику курсов.");
 app.MapGet("/api/market", async (FrankfurterClient frankfurter, CancellationToken cancellationToken) =>
 {
     try
@@ -24,7 +33,9 @@ app.MapGet("/api/market", async (FrankfurterClient frankfurter, CancellationToke
     {
         return Results.Problem("Could not obtain exchange rates from Frankfurter.", statusCode: 503);
     }
-});
+})
+    .WithSummary("Получить валютный рынок")
+    .WithDescription("Возвращает список денежных валют и их курсы относительно USD из Frankfurter. При недоступности данных возвращает HTTP 503.");
 
 app.MapGet("/api/rates", async (
     string? from,
@@ -61,7 +72,9 @@ app.MapGet("/api/rates", async (
     {
         return Results.Problem("Could not obtain exchange rates from Frankfurter.", statusCode: 503);
     }
-});
+})
+    .WithSummary("Получить курс валютной пары")
+    .WithDescription("Возвращает курс из валюты from в валюту to. Оба параметра — разные трёхбуквенные коды; при ошибке валидации возвращает HTTP 400.");
 
 await app.RunAsync();
 

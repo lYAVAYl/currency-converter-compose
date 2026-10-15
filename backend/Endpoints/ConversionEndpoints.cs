@@ -8,16 +8,12 @@ namespace Backend.Endpoints;
 public sealed record CreateConversionRequest(
     decimal Amount,
     string? FromCurrency,
-    string? ToCurrency,
-    string? Note);
+    string? ToCurrency);
 
 public sealed record CreateBatchRequest(
     decimal Amount,
     string? FromCurrency,
-    string[]? ToCurrencies,
-    string? Note);
-
-public sealed record UpdateNoteRequest(string? Note);
+    string[]? ToCurrencies);
 
 public sealed record ConversionResponse(
     long Id,
@@ -28,12 +24,11 @@ public sealed record ConversionResponse(
     decimal Result,
     string RateSource,
     DateTimeOffset RateAsOfUtc,
-    DateTimeOffset CreatedAtUtc,
-    string? Note)
+    DateTimeOffset CreatedAtUtc)
 {
     public static ConversionResponse FromEntity(Conversion value) => new(
         value.Id, value.FromCurrency, value.ToCurrency, value.Amount, value.Rate,
-        value.Result, value.RateSource, value.RateAsOfUtc, value.CreatedAtUtc, value.Note);
+        value.Result, value.RateSource, value.RateAsOfUtc, value.CreatedAtUtc);
 }
 
 public static class ConversionEndpoints
@@ -55,7 +50,9 @@ public static class ConversionEndpoints
             {
                 return Results.Problem("Currency rates are temporarily unavailable.", statusCode: 503);
             }
-        });
+        })
+            .WithSummary("Получить валютный рынок")
+            .WithDescription("Возвращает доступные валюты и курсы для интерфейса, обновляя справочник валют в PostgreSQL. При недоступности сервиса курсов возвращает HTTP 503.");
 
         api.MapGet("/currencies", async (MarketCatalogService catalogue, CancellationToken cancellationToken) =>
         {
@@ -68,7 +65,9 @@ public static class ConversionEndpoints
             {
                 return Results.Problem("Currency catalogue is temporarily unavailable.", statusCode: 503);
             }
-        });
+        })
+            .WithSummary("Получить список валют")
+            .WithDescription("Возвращает коды и названия доступных денежных валют. Перед ответом обновляет справочник валют в PostgreSQL.");
 
         api.MapGet("/conversions", async (AppDbContext db, int? limit, CancellationToken cancellationToken) =>
         {
@@ -85,14 +84,18 @@ public static class ConversionEndpoints
                 .Take(limit ?? 50)
                 .ToListAsync(cancellationToken);
             return Results.Ok(records.Select(ConversionResponse.FromEntity));
-        });
+        })
+            .WithSummary("Получить историю конвертаций")
+            .WithDescription("Возвращает последние сохранённые конвертации, начиная с новых. Параметр limit задаёт от 1 до 100 записей; по умолчанию возвращается 50.");
 
         api.MapGet("/conversions/{id:long}", async (long id, AppDbContext db, CancellationToken cancellationToken) =>
         {
             var record = await db.Conversions.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             return record is null ? Results.NotFound() : Results.Ok(ConversionResponse.FromEntity(record));
-        });
+        })
+            .WithSummary("Получить конвертацию по ID")
+            .WithDescription("Возвращает одну сохранённую конвертацию по её ID. Если запись не найдена, возвращает HTTP 404.");
 
         api.MapPost("/conversions", async (
             CreateConversionRequest request,
@@ -101,12 +104,14 @@ public static class ConversionEndpoints
             CancellationToken cancellationToken) =>
         {
             var result = await SaveConversionsAsync(request.Amount, request.FromCurrency,
-                request.ToCurrency is null ? null : [request.ToCurrency], request.Note,
+                request.ToCurrency is null ? null : [request.ToCurrency],
                 db, catalogue, cancellationToken);
             if (result.Error is not null) return result.Error;
             var conversion = result.Records![0];
             return Results.Created($"/api/conversions/{conversion.Id}", ConversionResponse.FromEntity(conversion));
-        });
+        })
+            .WithSummary("Сохранить одну конвертацию")
+            .WithDescription("Рассчитывает сумму по актуальному курсу и сохраняет одну валютную пару в PostgreSQL. При успехе возвращает HTTP 201 и созданную запись.");
 
         api.MapPost("/conversions/batch", async (
             CreateBatchRequest request,
@@ -115,39 +120,24 @@ public static class ConversionEndpoints
             CancellationToken cancellationToken) =>
         {
             var result = await SaveConversionsAsync(request.Amount, request.FromCurrency,
-                request.ToCurrencies, request.Note, db, catalogue, cancellationToken);
+                request.ToCurrencies, db, catalogue, cancellationToken);
             return result.Error ?? Results.Ok(result.Records!.Select(ConversionResponse.FromEntity));
-        });
-
-        api.MapPatch("/conversions/{id:long}/note", async (
-            long id, UpdateNoteRequest request, AppDbContext db, CancellationToken cancellationToken) =>
-        {
-            if (request.Note?.Trim().Length > 250)
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["note"] = ["Note must be at most 250 characters."]
-                });
-
-            var record = await db.Conversions.FindAsync([id], cancellationToken);
-            if (record is null)
-                return Results.NotFound();
-
-            record.Note = NormalizeNote(request.Note);
-            await db.SaveChangesAsync(cancellationToken);
-            return Results.Ok(ConversionResponse.FromEntity(record));
-        });
+        })
+            .WithSummary("Сохранить несколько конвертаций")
+            .WithDescription("Рассчитывает одну исходную сумму для 1–10 разных целевых валют и сохраняет результаты одним запросом. Исходную валюту нельзя указать среди целевых.");
 
         api.MapDelete("/conversions/{id:long}", async (long id, AppDbContext db, CancellationToken cancellationToken) =>
             await db.Conversions.Where(x => x.Id == id).ExecuteDeleteAsync(cancellationToken) == 0
                 ? Results.NotFound()
-                : Results.NoContent());
+                : Results.NoContent())
+            .WithSummary("Удалить конвертацию")
+            .WithDescription("Удаляет сохранённую конвертацию по ID. Возвращает HTTP 204 при успехе или HTTP 404, если запись не найдена.");
     }
 
     private static async Task<(List<Conversion>? Records, IResult? Error)> SaveConversionsAsync(
         decimal amount,
         string? fromCurrency,
         string[]? toCurrencies,
-        string? note,
         AppDbContext db,
         MarketCatalogService catalogue,
         CancellationToken cancellationToken)
@@ -164,8 +154,6 @@ public static class ConversionEndpoints
             || targets.Distinct(StringComparer.Ordinal).Count() != targets.Length
             || targets.Contains(from, StringComparer.Ordinal))
             errors["toCurrencies"] = ["Choose 1 to 10 different target currencies, excluding the source."];
-        if (note?.Trim().Length > 250)
-            errors["note"] = ["Note must be at most 250 characters."];
         if (errors.Count > 0)
             return (null, Results.ValidationProblem(errors));
 
@@ -219,8 +207,7 @@ public static class ConversionEndpoints
                 Result = result,
                 RateSource = market.Source,
                 RateAsOfUtc = source.AsOfUtc < target.AsOfUtc ? source.AsOfUtc : target.AsOfUtc,
-                CreatedAtUtc = DateTimeOffset.UtcNow,
-                Note = NormalizeNote(note)
+                CreatedAtUtc = DateTimeOffset.UtcNow
             });
         }
 
@@ -231,10 +218,4 @@ public static class ConversionEndpoints
 
     private static bool ValidCode(string? code) =>
         code is { Length: 3 } && code.All(char.IsAsciiLetterUpper);
-
-    private static string? NormalizeNote(string? note)
-    {
-        var normalized = note?.Trim();
-        return string.IsNullOrEmpty(normalized) ? null : normalized;
-    }
 }

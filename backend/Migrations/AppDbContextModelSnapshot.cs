@@ -45,11 +45,6 @@ namespace Backend.Migrations
                         .HasColumnType("character varying(4)")
                         .HasColumnName("from_currency");
 
-                    b.Property<string>("Note")
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("note");
-
                     b.Property<decimal>("Rate")
                         .HasColumnType("numeric(38,18)")
                         .HasColumnName("rate");

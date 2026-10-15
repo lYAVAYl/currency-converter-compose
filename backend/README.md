@@ -4,6 +4,9 @@ ASP.NET Core 10 API работает с PostgreSQL через EF Core и обр�
 отдельному `web-service` за курсами Frankfurter. При загрузке рынка новые
 валюты добавляются в таблицу `currencies`; история хранится в `conversions`.
 
+Swagger UI: [http://localhost:8081/swagger](http://localhost:8081/swagger).
+OpenAPI JSON: [http://localhost:8081/swagger/v1/swagger.json](http://localhost:8081/swagger/v1/swagger.json).
+
 | Метод | Адрес | Назначение |
 | --- | --- | --- |
 | GET | `/api/market` | Доступные валюты и курсы для интерфейса |
@@ -12,14 +15,13 @@ ASP.NET Core 10 API работает с PostgreSQL через EF Core и обр�
 | POST | `/api/conversions/batch` | Сохранить несколько пар одним запросом |
 | GET | `/api/conversions?limit=20` | Последние записи из БД |
 | GET | `/api/conversions/{id}` | Одна запись |
-| PATCH | `/api/conversions/{id}/note` | Изменить заметку |
 | DELETE | `/api/conversions/{id}` | Удалить запись |
 | GET | `/health/ready` | Проверка соединения с БД |
 
 Пример сохранения результатов для нескольких валют:
 
 ```json
-{"amount":1000,"fromCurrency":"RUB","toCurrencies":["GEL","USD","EUR"],"note":null}
+{"amount":1000,"fromCurrency":"RUB","toCurrencies":["GEL","USD","EUR"]}
 ```
 
 Сумма должна быть больше нуля и не превышать 1 000 000 000 000. В одном

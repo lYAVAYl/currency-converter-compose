@@ -37,7 +37,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.RateSource).HasColumnName("rate_source").HasMaxLength(80).IsRequired();
             entity.Property(x => x.RateAsOfUtc).HasColumnName("rate_as_of_utc");
             entity.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc");
-            entity.Property(x => x.Note).HasColumnName("note").HasMaxLength(250);
             entity.HasOne<Currency>().WithMany().HasForeignKey(x => x.FromCurrency).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Currency>().WithMany().HasForeignKey(x => x.ToCurrency).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.CreatedAtUtc);

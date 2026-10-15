@@ -406,8 +406,7 @@ saveButton.addEventListener("click", async () => {
       body: JSON.stringify({
         amount,
         fromCurrency: activeCode,
-        toCurrencies: visibleCodes.filter(code => code !== activeCode),
-        note: null
+        toCurrencies: visibleCodes.filter(code => code !== activeCode)
       })
     });
     saveStatus.textContent = `Сохранено ${saved.length} расчётов`;

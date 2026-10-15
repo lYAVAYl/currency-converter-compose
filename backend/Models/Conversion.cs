@@ -11,5 +11,4 @@ public sealed class Conversion
     public required string RateSource { get; set; }
     public DateTimeOffset RateAsOfUtc { get; set; }
     public DateTimeOffset CreatedAtUtc { get; set; }
-    public string? Note { get; set; }
 }

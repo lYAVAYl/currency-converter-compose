@@ -22,6 +22,11 @@ docker compose up --build -d
 ```
 
 Откройте [http://localhost:8080](http://localhost:8080).
+
+Документация API доступна в Swagger UI: [бекенд](http://localhost:8081/swagger)
+и [сервис курсов](http://localhost:8082/swagger). Оба интерфейса позволяют
+просматривать методы и отправлять пробные запросы.
+
 Для остановки:
 
 ```powershell
